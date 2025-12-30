@@ -1,0 +1,31 @@
+{
+  "name": "books-api",
+  "version": "1.0.0",
+  "description": "RESTful Books API with Express, PostgreSQL, JWT authentication, and user ownership.",
+  "homepage": "https://github.com/amarendra-008/books-api#readme",
+  "bugs": {
+    "url": "https://github.com/amarendra-008/books-api/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amarendra-008/books-api.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.0.3",
+    "ts-node-dev": "^2.0.0"
+  }
+}
