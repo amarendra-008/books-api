@@ -1,23 +1,38 @@
 # Books API
 
-RESTful Books API with Express, PostgreSQL, JWT authentication, and user ownership.
+![CI](https://github.com/amarendra-008/books-api/actions/workflows/ci.yml/badge.svg)
+![Node.js](https://img.shields.io/badge/Node.js-20+-green)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
+A production-ready RESTful API for managing books, built with Node.js, Express, TypeScript, and PostgreSQL. Features JWT authentication, comprehensive testing, and CI/CD pipeline.
 
 ## Tech Stack
 
-- **Runtime:** Node.js with Express.js
-- **Database:** PostgreSQL (Docker)
-- **Authentication:** JWT + bcrypt
-- **Validation:** Email format & password strength
+| Category | Technology |
+|----------|------------|
+| Runtime | Node.js + TypeScript |
+| Framework | Express.js 5 |
+| Database | PostgreSQL 16 |
+| Auth | JWT + bcrypt |
+| Validation | validator.js |
+| Security | Helmet + Rate Limiting |
+| Logging | Morgan |
+| Docs | Swagger/OpenAPI |
+| Testing | Jest + Supertest |
+| CI/CD | GitHub Actions |
+| Code Quality | ESLint |
 
 ## Features
 
-- User registration and login with secure password hashing
-- JWT-based authentication
-- Full CRUD operations for books
-- User ownership - users can only modify their own books
-- PostgreSQL with connection pooling
-
----
+- **Authentication** - JWT-based auth with secure password hashing (bcrypt)
+- **Authorization** - Resource ownership (users can only modify their own books)
+- **Security** - Helmet headers, rate limiting, input validation
+- **API Documentation** - Interactive Swagger UI at `/api-docs`
+- **Testing** - Unit tests with Jest and Supertest
+- **CI/CD** - Automated testing and builds with GitHub Actions
+- **Health Check** - `/health` endpoint for monitoring
+- **Logging** - Request logging with Morgan
 
 ## Quick Start
 
@@ -29,25 +44,22 @@ cd books-api
 npm install
 ```
 
-### 2. Start PostgreSQL
+### 2. Configure Environment
+
+```bash
+cp .env.example .env
+# Edit .env with your settings (optional - defaults work for development)
+```
+
+### 3. Start PostgreSQL
 
 ```bash
 docker-compose up -d
 ```
 
-### 3. Create Database Tables
+### 4. Create Database Tables
 
-Connect to PostgreSQL (pgAdmin/DBeaver/TablePlus):
-
-| Field | Value |
-|-------|-------|
-| Host | `localhost` |
-| Port | `5432` |
-| Database | `booksdb` |
-| Username | `postgres` |
-| Password | `postgres` |
-
-Run these SQL commands:
+Connect to PostgreSQL and run:
 
 ```sql
 -- Users table
@@ -85,242 +97,99 @@ CREATE TRIGGER books_updated_at
   EXECUTE FUNCTION update_updated_at();
 ```
 
-### 4. Start Server
+### 5. Start Server
 
 ```bash
 npm run dev
 ```
 
 Server runs at `http://localhost:3000`
-
----
+API Docs at `http://localhost:3000/api-docs`
 
 ## API Endpoints
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
+| GET | `/health` | No | Health check |
 | POST | `/api/auth/register` | No | Register new user |
 | POST | `/api/auth/login` | No | Login, get JWT token |
-| GET | `/api/books` | Yes | Get all books with owner info |
-| GET | `/api/books/my` | Yes | Get current user's books |
-| GET | `/api/books/:id` | Yes | Get book by id |
-| POST | `/api/books` | Yes | Create new book |
+| GET | `/api/books` | Yes | Get all books |
+| GET | `/api/books/my` | Yes | Get user's books |
+| GET | `/api/books/:id` | Yes | Get book by ID |
+| POST | `/api/books` | Yes | Create book |
 | PUT | `/api/books/:id` | Yes | Update book (owner only) |
 | DELETE | `/api/books/:id` | Yes | Delete book (owner only) |
 
----
+## Usage Examples
 
-## Test with cURL
-
-### Authentication
-
-#### Register a new user
+### Register
 
 ```bash
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{
-    "username": "john",
-    "email": "john@example.com",
-    "password": "Password123"
-  }'
+  -d '{"username": "john", "email": "john@example.com", "password": "Password123"}'
 ```
 
-**Response:**
-```json
-{
-  "message": "User registered successfully",
-  "user": {
-    "id": 1,
-    "username": "john",
-    "email": "john@example.com",
-    "created_at": "2024-12-30T10:00:00.000Z"
-  }
-}
-```
-
-#### Login and get token
+### Login
 
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "john@example.com",
-    "password": "Password123"
-  }'
+  -d '{"email": "john@example.com", "password": "Password123"}'
 ```
 
-**Response:**
-```json
-{
-  "message": "Login successful",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": 1,
-    "username": "john",
-    "email": "john@example.com"
-  }
-}
-```
-
-> **Save the token!** You'll need it for all protected routes.
-
----
-
-### Books (Protected Routes)
-
-> Replace `YOUR_TOKEN` with the token from login response.
-
-#### Create a book
+### Create Book
 
 ```bash
 curl -X POST http://localhost:3000/api/books \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{
-    "title": "1984",
-    "author": "George Orwell",
-    "year": 1949
-  }'
+  -d '{"title": "1984", "author": "George Orwell", "year": 1949}'
 ```
 
-**Response:**
-```json
-{
-  "message": "Book added successfully",
-  "book": {
-    "id": 1,
-    "title": "1984",
-    "author": "George Orwell",
-    "year": 1949,
-    "user_id": 1,
-    "created_at": "2024-12-30T10:00:00.000Z",
-    "updated_at": "2024-12-30T10:00:00.000Z"
-  }
-}
-```
-
-#### Get all books (with owner info)
+## Scripts
 
 ```bash
-curl http://localhost:3000/api/books \
-  -H "Authorization: Bearer YOUR_TOKEN"
+npm run dev        # Development with hot reload
+npm run build      # Build TypeScript
+npm start          # Production
+npm run lint       # Run ESLint
+npm run lint:fix   # Fix lint issues
+npm test           # Run tests
+npm run test:watch # Watch mode
 ```
 
-**Response:**
-```json
-[
-  {
-    "id": 1,
-    "title": "1984",
-    "author": "George Orwell",
-    "year": 1949,
-    "created_at": "2024-12-30T10:00:00.000Z",
-    "updated_at": "2024-12-30T10:00:00.000Z",
-    "owner_id": 1,
-    "owner_username": "john"
-  }
-]
+## Project Structure
+
+```
+books-api/
+├── .github/workflows/   # CI/CD
+├── src/
+│   ├── config/          # Configuration
+│   ├── db/              # Database connection
+│   ├── middleware/      # Auth middleware
+│   ├── routes/          # API routes
+│   ├── tests/           # Test files
+│   └── index.ts         # Entry point
+├── db/                  # SQL schemas
+├── .env.example         # Environment template
+├── docker-compose.yml   # PostgreSQL
+├── jest.config.js       # Test config
+└── tsconfig.json        # TypeScript config
 ```
 
-#### Get my books only
+## Environment Variables
 
-```bash
-curl http://localhost:3000/api/books/my \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-#### Get book by ID
-
-```bash
-curl http://localhost:3000/api/books/1 \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-#### Update a book (owner only)
-
-```bash
-curl -X PUT http://localhost:3000/api/books/1 \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{
-    "title": "Animal Farm",
-    "author": "George Orwell",
-    "year": 1945
-  }'
-```
-
-#### Delete a book (owner only)
-
-```bash
-curl -X DELETE http://localhost:3000/api/books/1 \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
----
-
-### Error Responses
-
-#### Missing token (401)
-
-```bash
-curl http://localhost:3000/api/books
-```
-
-```json
-{ "message": "No token provided" }
-```
-
-#### Invalid token (401)
-
-```bash
-curl http://localhost:3000/api/books \
-  -H "Authorization: Bearer invalid_token"
-```
-
-```json
-{ "message": "Invalid token" }
-```
-
-#### Not owner (403)
-
-```bash
-curl -X DELETE http://localhost:3000/api/books/1 \
-  -H "Authorization: Bearer ANOTHER_USERS_TOKEN"
-```
-
-```json
-{ "message": "Not authorized to delete this book" }
-```
-
-#### Book not found (404)
-
-```bash
-curl http://localhost:3000/api/books/999 \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-```json
-{ "message": "Book not found" }
-```
-
-#### Invalid input (400)
-
-```bash
-curl -X POST http://localhost:3000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "john",
-    "email": "invalid-email",
-    "password": "weak"
-  }'
-```
-
-```json
-{ "message": "Invalid email format" }
-```
-
----
+| Variable | Default | Description |
+|----------|---------|-------------|
+| PORT | 3000 | Server port |
+| NODE_ENV | development | Environment |
+| DB_HOST | localhost | Database host |
+| DB_PORT | 5432 | Database port |
+| DB_NAME | booksdb | Database name |
+| DB_USER | postgres | Database user |
+| DB_PASSWORD | postgres | Database password |
+| JWT_SECRET | (random) | JWT signing key |
 
 ## Password Requirements
 
@@ -328,82 +197,6 @@ curl -X POST http://localhost:3000/api/auth/register \
 - At least one uppercase letter
 - At least one lowercase letter
 - At least one number
-
----
-
-## Project Structure
-
-```
-books-api/
-├── src/
-│   ├── index.ts           # App entry point
-│   ├── db/
-│   │   └── index.ts       # Database connection pool
-│   ├── middleware/
-│   │   └── auth.ts        # JWT auth middleware
-│   └── routes/
-│       ├── auth.ts        # Register & login routes
-│       └── books.ts       # Books CRUD routes
-├── db/
-│   ├── users.sql          # Users table schema
-│   └── books.sql          # Books table schema
-├── docker-compose.yml     # PostgreSQL container
-├── package.json
-└── tsconfig.json
-```
-
----
-
-## Docker Commands
-
-```bash
-# Start PostgreSQL
-docker-compose up -d
-
-# Check running containers
-docker ps
-
-# View logs
-docker-compose logs -f
-
-# Stop PostgreSQL
-docker-compose down
-
-# Stop and delete data
-docker-compose down -v
-```
-
----
-
-## NPM Scripts
-
-```bash
-# Development (auto-reload)
-npm run dev
-
-# Build TypeScript
-npm run build
-
-# Production
-npm start
-```
-
----
-
-## HTTP Status Codes
-
-| Code | Meaning | When |
-|------|---------|------|
-| 200 | OK | Successful GET, PUT, DELETE |
-| 201 | Created | Successful POST |
-| 400 | Bad Request | Invalid input, missing fields |
-| 401 | Unauthorized | Missing or invalid token |
-| 403 | Forbidden | Not owner of resource |
-| 404 | Not Found | Resource doesn't exist |
-| 409 | Conflict | Duplicate email/username |
-| 500 | Server Error | Database or server failure |
-
----
 
 ## License
 

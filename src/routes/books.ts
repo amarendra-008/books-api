@@ -4,10 +4,41 @@ import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-// Apply auth middleware to all routes
 router.use(authMiddleware);
 
-// POST /api/books - Create a book
+/**
+ * @swagger
+ * /api/books:
+ *   post:
+ *     summary: Create a new book
+ *     tags: [Books]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - author
+ *               - year
+ *             properties:
+ *               title:
+ *                 type: string
+ *               author:
+ *                 type: string
+ *               year:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Book created successfully
+ *       400:
+ *         description: Missing required fields
+ *       401:
+ *         description: Unauthorized
+ */
 router.post('/', async (req: AuthRequest, res: Response) => {
   try {
     const { title, author, year } = req.body;
@@ -22,15 +53,30 @@ router.post('/', async (req: AuthRequest, res: Response) => {
       [title, author, year, userId]
     );
 
-    res.status(201).json({ message: 'Book added successfully', book: result.rows[0] });
+    res
+      .status(201)
+      .json({ message: 'Book added successfully', book: result.rows[0] });
   } catch (error) {
     console.error('Error creating book:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// GET /api/books - Get all books with owner info
-router.get('/', async (req: AuthRequest, res: Response) => {
+/**
+ * @swagger
+ * /api/books:
+ *   get:
+ *     summary: Get all books
+ *     tags: [Books]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all books
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/', async (_req: AuthRequest, res: Response) => {
   try {
     const result = await pool.query(`
       SELECT
@@ -53,7 +99,20 @@ router.get('/', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// GET /api/books/my - Get current user's books only
+/**
+ * @swagger
+ * /api/books/my:
+ *   get:
+ *     summary: Get current user's books
+ *     tags: [Books]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user's books
+ *       401:
+ *         description: Unauthorized
+ */
 router.get('/my', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
@@ -68,7 +127,26 @@ router.get('/my', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// GET /api/books/:id - Get book by id
+/**
+ * @swagger
+ * /api/books/{id}:
+ *   get:
+ *     summary: Get a book by ID
+ *     tags: [Books]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Book details
+ *       404:
+ *         description: Book not found
+ */
 router.get('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const id = Number(req.params.id);
@@ -85,7 +163,41 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// PUT /api/books/:id - Update a book (only owner can update)
+/**
+ * @swagger
+ * /api/books/{id}:
+ *   put:
+ *     summary: Update a book (owner only)
+ *     tags: [Books]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               author:
+ *                 type: string
+ *               year:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Book updated successfully
+ *       403:
+ *         description: Not authorized
+ *       404:
+ *         description: Book not found
+ */
 router.put('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const id = Number(req.params.id);
@@ -96,15 +208,19 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    // Check if book exists and belongs to user
-    const bookCheck = await pool.query('SELECT user_id FROM books WHERE id = $1', [id]);
+    const bookCheck = await pool.query(
+      'SELECT user_id FROM books WHERE id = $1',
+      [id]
+    );
 
     if (bookCheck.rows.length === 0) {
       return res.status(404).json({ message: 'Book not found' });
     }
 
     if (bookCheck.rows[0].user_id !== userId) {
-      return res.status(403).json({ message: 'Not authorized to update this book' });
+      return res
+        .status(403)
+        .json({ message: 'Not authorized to update this book' });
     }
 
     const result = await pool.query(
@@ -119,24 +235,52 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// DELETE /api/books/:id - Delete a book (only owner can delete)
+/**
+ * @swagger
+ * /api/books/{id}:
+ *   delete:
+ *     summary: Delete a book (owner only)
+ *     tags: [Books]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Book deleted successfully
+ *       403:
+ *         description: Not authorized
+ *       404:
+ *         description: Book not found
+ */
 router.delete('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const id = Number(req.params.id);
     const userId = req.user?.userId;
 
-    // Check if book exists and belongs to user
-    const bookCheck = await pool.query('SELECT user_id FROM books WHERE id = $1', [id]);
+    const bookCheck = await pool.query(
+      'SELECT user_id FROM books WHERE id = $1',
+      [id]
+    );
 
     if (bookCheck.rows.length === 0) {
       return res.status(404).json({ message: 'Book not found' });
     }
 
     if (bookCheck.rows[0].user_id !== userId) {
-      return res.status(403).json({ message: 'Not authorized to delete this book' });
+      return res
+        .status(403)
+        .json({ message: 'Not authorized to delete this book' });
     }
 
-    const result = await pool.query('DELETE FROM books WHERE id = $1 RETURNING *', [id]);
+    const result = await pool.query(
+      'DELETE FROM books WHERE id = $1 RETURNING *',
+      [id]
+    );
 
     res.json({ message: 'Book deleted successfully', book: result.rows[0] });
   } catch (error) {
